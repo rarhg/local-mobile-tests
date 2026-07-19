@@ -1,0 +1,19 @@
+# InrlliJ IDEA
+.idea/
+*.iml
+out/
+gen/
+
+# Gradle
+.gradle/
+build/
+
+# Логи и отчеты
+/*_generated_configs
+allure-results/
+allure-report/
+*.log
+
+# Операционная система
+.DS_Store
+Thumbs.db
