@@ -1,6 +1,11 @@
 pipeline {
     agent any
 
+    // Этот блок заставит Jenkins подгрузить внутренний, локально установленный Gradle
+    tools {
+        gradle 'Gradle' // В кавычках указывается имя Gradle, настроенное в Global Tool Configuration вашего Jenkins
+    }
+
     parameters {
         string(name: 'THREADS', defaultValue: '1', description: 'Количество потоков для каждого стенда')
     }
@@ -9,7 +14,10 @@ pipeline {
         stage('Подготовка проекта') {
             steps {
                 checkout scm
-                sh 'gradle clean'
+                echo 'Выдача прав на запуск Gradle в Linux окружении...'
+                sh 'chmod +x gradlew'
+                echo 'Очистка предыдущей сборки...'
+                sh './gradlew clean'
             }
         }
 
@@ -22,7 +30,7 @@ pipeline {
                                 string(credentialsId: 'browserstack_username', variable: 'BS_USER'),
                                 string(credentialsId: 'browserstack_access_key', variable: 'BS_KEY')
                             ]) {
-                                sh "gradle android -DdeviceHost=browserstack -Pweb_threads=${params.THREADS}"
+                                sh "./gradlew android -DdeviceHost=browserstack -Pweb_threads=${params.THREADS}"
                             }
                         }
                     }
@@ -42,7 +50,7 @@ pipeline {
                                         -F "file=@src/test/resources/apps/wikipedia.ipa"
                                     """
                                 }
-                                sh "gradle ios -DdeviceHost=browserstack -Pweb_threads=${params.THREADS}"
+                                sh "./gradlew ios -DdeviceHost=browserstack -Pweb_threads=${params.THREADS}"
                             }
                         }
                     }
