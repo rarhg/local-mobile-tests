@@ -14,43 +14,45 @@ pipeline {
                 sh 'chmod +x gradlew'
 
                 echo 'Очистка предыдущей сборки...'
-                sh './gradlew clean'
+                sh 'gradle clean'
             }
         }
 
         stage('Параллельное тестирование (Кроссплатформа)') {
-            parallel {
-                stage('Тесты: Локальный Android') {
-                    steps {
-                        echo 'Запуск автотестов на локальном эмуляторе/девайсе Android...'
-                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                            sh "./gradlew android -DdeviceHost=emulation -Pweb_threads=${params.THREADS}"
+            stage('Параллельное тестирование (Кроссплатформа в Облаке)') {
+                parallel {
+                    stage('Тесты: Облачный Android (BrowserStack)') {
+                        steps {
+                            echo 'Запуск автотестов на Android в облаке...'
+                            catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                                withCredentials([
+                                    string(credentialsId: 'browserstack_username', variable: 'BS_USER'),
+                                    string(credentialsId: 'browserstack_access_key', variable: 'BS_KEY')
+                                ]) {
+                                    sh "./gradlew android -DdeviceHost=browserstack -Pweb_threads=${params.THREADS}"
+                                }
+                            }
                         }
                     }
-                }
 
-                stage('Тесты: Облачный iOS (BrowserStack)') {
-                    steps {
-                        echo 'Загрузка iOS приложения в облако BrowserStack и запуск...'
-                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                            withCredentials([
-                                string(credentialsId: 'browserstack_username', variable: 'BS_USER'),
-                                string(credentialsId: 'browserstack_access_key', variable: 'BS_KEY')
-                            ]) {
-                                script {
-                                    echo 'Загрузка iOS APK/IPA-файла в хранилище BrowserStack...'
-                                    def response = sh(
-                                        script: """
+                    stage('Тесты: Облачный iOS (BrowserStack)') {
+                        steps {
+                            echo 'Загрузка iOS приложения в облако BrowserStack и запуск...'
+                            catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                                withCredentials([
+                                    string(credentialsId: 'browserstack_username', variable: 'BS_USER'),
+                                    string(credentialsId: 'browserstack_access_key', variable: 'BS_KEY')
+                                ]) {
+                                    script {
+                                        echo 'Загрузка iOS APK/IPA-файла в хранилище BrowserStack...'
+                                        sh """
                                             curl -u "${BS_USER}:${BS_KEY}" \
                                             -X POST "https://browserstack.com" \
                                             -F "file=@src/test/resources/apps/wikipedia.ipa"
-                                        """,
-                                        returnStdout: true
-                                    ).trim()
-                                    echo "Ответ от BrowserStack: ${response}"
+                                        """
+                                    }
+                                    sh "./gradlew ios -DdeviceHost=browserstack -Pweb_threads=${params.THREADS}"
                                 }
-
-                                sh "./gradlew ios -DdeviceHost=browserstack -Pweb_threads=${params.THREADS}"
                             }
                         }
                     }
