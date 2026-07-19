@@ -1,9 +1,8 @@
 pipeline {
     agent any
 
-    // Этот блок заставит Jenkins подгрузить внутренний, локально установленный Gradle
     tools {
-        gradle 'Gradle' // В кавычках указывается имя Gradle, настроенное в Global Tool Configuration вашего Jenkins
+        gradle '8'
     }
 
     parameters {
