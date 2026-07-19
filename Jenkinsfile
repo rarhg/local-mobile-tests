@@ -8,6 +8,11 @@ pipeline {
     stages {
         stage('Подготовка проекта') {
             steps {
+                checkout scm
+
+                echo 'Выдача прав на запуск Gradle в Linux окружении...'
+                sh 'chmod +x gradlew'
+
                 echo 'Очистка предыдущей сборки...'
                 sh './gradlew clean'
             }
